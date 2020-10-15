@@ -18,11 +18,14 @@
  *
  */
 
-// const HDWalletProvider = require('@truffle/hdwallet-provider');
-// const infuraKey = "fj4jll3k.....";
-//
-// const fs = require('fs');
-// const mnemonic = fs.readFileSync(".secret").toString().trim();
+const HDWalletProvider = require('@truffle/hdwallet-provider');
+const path = require("path");
+const fs = require('fs');
+
+let config = { MNEMONIC: "", INFURA_KEY: "" };
+if (fs.existsSync(path.join(__dirname, "config.js"))) {
+  config = require("./config.js");
+}
 
 module.exports = {
   /**
@@ -42,11 +45,20 @@ module.exports = {
     // tab if you use this network and you must also set the `host`, `port` and `network_id`
     // options below to some value.
     //
-    // development: {
-    //  host: "127.0.0.1",     // Localhost (default: none)
-    //  port: 8545,            // Standard Ethereum port (default: none)
-    //  network_id: "*",       // Any network (default: none)
-    // },
+    development: {
+     host: "127.0.0.1",     // Localhost (default: none)
+     port: 8545,            // Standard Ethereum port (default: none)
+     network_id: "*",       // Any network (default: none)
+    },
+    local_testnet: {
+      host: "ganache",
+      port: 8545,
+      network_id: "*", // Match any network id
+    },
+    mainnet: {
+      provider: infuraProvider("mainnet"),
+      network_id: 1,
+    },
     // Another network with more advanced options...
     // advanced: {
     // port: 8777,             // Custom port
@@ -58,14 +70,14 @@ module.exports = {
     // },
     // Useful for deploying to a public network.
     // NB: It's important to wrap the provider as a function.
-    // ropsten: {
-    // provider: () => new HDWalletProvider(mnemonic, `https://ropsten.infura.io/v3/YOUR-PROJECT-ID`),
-    // network_id: 3,       // Ropsten's id
-    // gas: 5500000,        // Ropsten has a lower block limit than mainnet
-    // confirmations: 2,    // # of confs to wait between deployments. (default: 0)
-    // timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
-    // skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
-    // },
+    ropsten: {
+      provider: infuraProvider("ropsten"),
+      network_id: 3,       // Ropsten's id
+      gas: 5500000,        // Ropsten has a lower block limit than mainnet
+      confirmations: 2,    // # of confs to wait between deployments. (default: 0)
+      timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
+      skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
+    },
     // Useful for private networks
     // private: {
     // provider: () => new HDWalletProvider(mnemonic, `https://network.io`),
@@ -76,7 +88,7 @@ module.exports = {
 
   // Set default mocha options here, use special reporters etc.
   mocha: {
-    // timeout: 100000
+    timeout: 100000
   },
 
   // Configure your compilers
@@ -94,3 +106,20 @@ module.exports = {
     },
   },
 };
+
+function infuraProvider(network) {
+  return () => {
+    if (!config.MNEMONIC) {
+      console.error("A valid MNEMONIC must be provided in config.js");
+      process.exit(1);
+    }
+    if (!config.INFURA_KEY) {
+      console.error("A valid INFURA_KEY must be provided in config.js");
+      process.exit(1);
+    }
+    return new HDWalletProvider(
+      config.MNEMONIC,
+      `https://${network}.infura.io/v3/${config.INFURA_KEY}`
+    );
+  };
+}
