@@ -7,12 +7,11 @@ const YFODistribution = artifacts.require("YFODistribution.sol");
 module.exports = async function(deployer, network, accounts) {
   console.log('accounts[0] = ', accounts[0])
 
-  await deployer.deploy(erc20_0, "LP0", "LP0", '1000', {from: accounts[0]});
-  await deployer.deploy(erc20_1, "LP1", "LP1", '1000', {from: accounts[0]});
-  await deployer.deploy(erc20_2, "LP2", "LP2", '1000', {from: accounts[0]});
-
+  await deployer.deploy(erc20_0, "LP0", "LP0", '100000000000000000000000000', 18, {from: accounts[0]});
   const lp0 = await erc20_0.deployed();
+  await deployer.deploy(erc20_1, "LP1", "LP1", '100000000000000000000000000', 18, {from: accounts[0]});
   const lp1 = await erc20_1.deployed();
+  await deployer.deploy(erc20_2, "LP2", "LP2", '100000000000000000000000000', 18, {from: accounts[0]});
   const lp2 = await erc20_2.deployed();
 
   await deployer.deploy(YFO, {from: accounts[0]})
@@ -22,8 +21,8 @@ module.exports = async function(deployer, network, accounts) {
   await yfo.transferOwnership(yfoDist.address, {from: accounts[0]});
 
   console.log("lp0.address     = ", lp0.address);
-  console.log("lp1.address     = ", lp0.address);
-  console.log("lp2.address     = ", lp0.address);
+  console.log("lp1.address     = ", lp1.address);
+  console.log("lp2.address     = ", lp2.address);
   
   console.log("yfo.address     = ", yfo.address)
   console.log("yfodist.address = ", yfoDist.address)

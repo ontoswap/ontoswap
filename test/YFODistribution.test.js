@@ -1,15 +1,15 @@
 const { expectRevert, time } = require('@openzeppelin/test-helpers');
 const YFOToken = artifacts.require('YFOToken');
 const YFODistribution = artifacts.require('YFODistribution');
-const MockERC20Token = artifacts.require('MockERC20Token');
+const MockERC20 = artifacts.require('MockERC20');
 
 contract('YFODist', ([alice, bob, carol, dave, erin, owner]) => {
     beforeEach(async () => {
         this.yfo = await YFOToken.new({ from: owner });
-        this.lp0 = await MockERC20Token.new("OSWAP_USDT", "LP0", "1000", "0", {from: owner});
-        this.lp1 = await MockERC20Token.new("YFO_USDT", "LP1", "1000", "0", {from: owner});
-        this.lp2 = await MockERC20Token.new("DAI_USDT", "LP2", "1000", "0", {from: owner});
-        this.lp3 = await MockERC20Token.new("ONT_USDT", "LP3", "1000", "0", {from: owner});
+        this.lp0 = await MockERC20.new("OSWAP_USDT", "LP0", "1000", "0", {from: owner});
+        this.lp1 = await MockERC20.new("YFO_USDT", "LP1", "1000", "0", {from: owner});
+        this.lp2 = await MockERC20.new("DAI_USDT", "LP2", "1000", "0", {from: owner});
+        this.lp3 = await MockERC20.new("ONT_USDT", "LP3", "1000", "0", {from: owner});
         
     });
 
@@ -46,10 +46,10 @@ contract('YFODist', ([alice, bob, carol, dave, erin, owner]) => {
     context('With ERC/LP token added to the field', () => {
         beforeEach(async () => {
             this.yfo = await YFOToken.new({ from: owner });
-            this.lp0 = await MockERC20Token.new("OSWAP_USDT", "LP0", "1000", "0", {from: alice});
-            this.lp1 = await MockERC20Token.new("YFO_USDT", "LP1", "1000", "0", {from: bob});
-            this.lp2 = await MockERC20Token.new("DAI_USDT", "LP2", "1000", "0", {from: carol});
-            this.lp3 = await MockERC20Token.new("ONT_USDT", "LP3", "1000", "0", {from: dave});
+            this.lp0 = await MockERC20.new("OSWAP_USDT", "LP0", "1000", "0", {from: alice});
+            this.lp1 = await MockERC20.new("YFO_USDT", "LP1", "1000", "0", {from: bob});
+            this.lp2 = await MockERC20.new("DAI_USDT", "LP2", "1000", "0", {from: carol});
+            this.lp3 = await MockERC20.new("ONT_USDT", "LP3", "1000", "0", {from: dave});
             
         });
 
@@ -239,7 +239,21 @@ contract('YFODist', ([alice, bob, carol, dave, erin, owner]) => {
             assert.equal((await this.dist.pendingYfo(0, alice)).toString(), '9920634920634918684');
             assert.equal((await this.dist.pendingYfo(1, bob)).toString(), '1860119047619047253');
         });
+        it ('should have correct reward per block', async() => {
+             // 100 per block farming rate starting at block 100 until block 100 + 40320 * 10
+             this.dist = await YFODistribution.new(
+                this.yfo.address, 
+                '4359654017857142', 
+                '100', 
+                [this.lp0.address, this.lp1.address, this.lp2.address], 
+                ['4', '3', '2'], 
+                { from: owner });
+            await this.yfo.transferOwnership(this.dist.address, { from: owner });
+            
+            let rpb = await this.dist.rewardPerBlock();
+            assert.equal(rpb.toString(), '1116071428571428352')
 
+        });
         // it('should stop giving bonus YFOs after the bonus period ends', async () => {
         //     // 100 per block farming rate starting at block 100 until block 100 + 40320 * 10
         //     this.dist = await YFODistribution.new(

@@ -139,6 +139,16 @@ contract YFODistribution is Ownable {
             _f = halved < 9 ?  _f + 2 ** (8 - halved) * ((_to - startBlock) % halvedBlock) : _f + ((_to - startBlock) % halvedBlock);
         }
     }
+    function rewardPerBlock() public view returns (uint256) {
+        uint256 bn = block.number;
+        if (bn < startBlock || bn > endBlock) {
+            return 0;
+        } else {
+            uint256 factor = bn.sub(bn).div(startBlock);
+            factor = factor <= 8 ? 2 ** (8 - factor) : 1;
+            return factor.mul(yfoPerBlock);
+        }
+    }
     // View function to see pending YFOs on frontend.
     function pendingYfo(uint256 _pid, address _user) external view returns (uint256) {
         PoolInfo storage pool = poolInfo[_pid];

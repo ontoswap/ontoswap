@@ -6,15 +6,15 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-contract MockERC20 is ERC20 {
-    constructor(
-        string memory name,
-        string memory symbol,
-        uint256 supply
-    ) public ERC20(name, symbol) {
-        _mint(msg.sender, supply);
-    }
-}
+// contract MockERC20 is ERC20 {
+//     constructor(
+//         string memory name,
+//         string memory symbol,
+//         uint256 supply
+//     ) public ERC20(name, symbol) {
+//         _mint(msg.sender, supply);
+//     }
+// }
 
 contract ERC20Token is Context, IERC20 {
     using SafeMath for uint256;
@@ -291,7 +291,7 @@ contract ERC20Token is Context, IERC20 {
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
 }
 
-contract MockERC20Token is ERC20Token {
+contract MockERC20 is ERC20Token {
     constructor(
         string memory name,
         string memory symbol,
