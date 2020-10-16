@@ -2,5 +2,5 @@
 /build/
 /package.
 /truffle-config-test.js
-/config.js
 /docs
+/abi

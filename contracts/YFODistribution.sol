@@ -37,7 +37,7 @@ contract YFODistribution is Ownable {
         IERC20 lpToken;           // Address of LP token contract.
         uint256 allocPoint;       // How many allocation points assigned to this pool. YFOs to distribute per block.
         uint256 lastRewardBlock;  // Last block number that YFOs distribution occurs.
-        uint256 accYfoPerShare; // Accumulated YFOs per share, times 1e12. See below.
+        uint256 accYfoPerShare; // Accumulated YFOs per share, times 1e18. See below.
     }
 
     // The YFO TOKEN!
@@ -139,6 +139,16 @@ contract YFODistribution is Ownable {
             _f = halved < 9 ?  _f + 2 ** (8 - halved) * ((_to - startBlock) % halvedBlock) : _f + ((_to - startBlock) % halvedBlock);
         }
     }
+    function rewardPerBlock() public view returns (uint256) {
+        uint256 bn = block.number;
+        if (bn < startBlock || bn > endBlock) {
+            return 0;
+        } else {
+            uint256 factor = bn.sub(bn).div(startBlock);
+            factor = factor <= 8 ? 2 ** (8 - factor) : 1;
+            return factor.mul(yfoPerBlock);
+        }
+    }
     // View function to see pending YFOs on frontend.
     function pendingYfo(uint256 _pid, address _user) external view returns (uint256) {
         PoolInfo storage pool = poolInfo[_pid];
@@ -148,9 +158,9 @@ contract YFODistribution is Ownable {
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
             uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
             uint256 yfoReward = multiplier.mul(yfoPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
-            accYfoPerShare = accYfoPerShare.add(yfoReward.mul(1e12).div(lpSupply));
+            accYfoPerShare = accYfoPerShare.add(yfoReward.mul(1e18).div(lpSupply));
         }
-        return user.amount.mul(accYfoPerShare).div(1e12).sub(user.rewardDebt);
+        return user.amount.mul(accYfoPerShare).div(1e18).sub(user.rewardDebt);
     }
 
     // Update reward variables of the given pool to be up-to-date.
@@ -166,9 +176,11 @@ contract YFODistribution is Ownable {
         }
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
         uint256 yfoReward = multiplier.mul(yfoPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
-        yfo.mint(address(this), yfoReward);
-        pool.accYfoPerShare = pool.accYfoPerShare.add(yfoReward.mul(1e12).div(lpSupply));
-        pool.lastRewardBlock = block.number;
+        if (yfoReward != 0) {
+            yfo.mint(address(this), yfoReward);
+            pool.accYfoPerShare = pool.accYfoPerShare.add(yfoReward.mul(1e18).div(lpSupply));
+            pool.lastRewardBlock = block.number;
+        }
     }
 
     // Deposit LP tokens to YFODistribution for YFO allocation.
@@ -177,7 +189,7 @@ contract YFODistribution is Ownable {
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
         if (user.amount > 0) {
-            uint256 pending = user.amount.mul(pool.accYfoPerShare).div(1e12).sub(user.rewardDebt);
+            uint256 pending = user.amount.mul(pool.accYfoPerShare).div(1e18).sub(user.rewardDebt);
             if(pending > 0) {
                 safeYfoTransfer(msg.sender, pending);
             }
@@ -187,7 +199,7 @@ contract YFODistribution is Ownable {
             user.amount = user.amount.add(_amount);
         }
         if (pool.accYfoPerShare != 0) {
-            user.rewardDebt = user.amount.mul(pool.accYfoPerShare).div(1e12);
+            user.rewardDebt = user.amount.mul(pool.accYfoPerShare).div(1e18);
         }
         emit Deposit(msg.sender, _pid, _amount);
     }
@@ -198,7 +210,7 @@ contract YFODistribution is Ownable {
         UserInfo storage user = userInfo[_pid][msg.sender];
         require(user.amount >= _amount, "withdraw: not good");
         updatePool(_pid);
-        uint256 pending = user.amount.mul(pool.accYfoPerShare).div(1e12).sub(user.rewardDebt);
+        uint256 pending = user.amount.mul(pool.accYfoPerShare).div(1e18).sub(user.rewardDebt);
         if(pending > 0) {
             safeYfoTransfer(msg.sender, pending);
         }
@@ -207,7 +219,7 @@ contract YFODistribution is Ownable {
             pool.lpToken.safeTransfer(address(msg.sender), _amount);
         }
         if (pool.accYfoPerShare != 0) {
-            user.rewardDebt = user.amount.mul(pool.accYfoPerShare).div(1e12);
+            user.rewardDebt = user.amount.mul(pool.accYfoPerShare).div(1e18);
         }
         emit Withdraw(msg.sender, _pid, _amount);
     }
